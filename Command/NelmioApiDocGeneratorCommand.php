@@ -14,7 +14,7 @@ class NelmioApiDocGeneratorCommand extends ContainerAwareCommand
 
     protected static $defaultName = 'kbunel:nelmioApiDoc:generate';
 
-    public function __construct(ApiDocGenerator $apiDocGenerator)
+    public function __construct(NelmioApiDocGenerator $apiDocGenerator)
     {
         $this->apiDocGenerator = $apiDocGenerator;
 
@@ -26,17 +26,20 @@ class NelmioApiDocGeneratorCommand extends ContainerAwareCommand
         $this
             ->setName(self::$defaultName)
             ->setDescription('Generate doc on routes')
+            ->addArgument('path', InputArgument::REQUIRED)
             ->addArgument('controllerAction', InputArgument::OPTIONAL)
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $path = $input->getArgument('path');
+
         $controllerAction = $input->getArgument('controllerAction');
         if (!preg_match('/^[a-zA-Z0-9]+::[a-zA-Z0-9]$/', $controllerAction)) {
             $output->writeln('<comment>Wrong argument, controller path must be `controller::action`, eg: `SecurityController::login`</comment>');
         }
 
-        $this->apiDocGenerator->generate($controllerAction);
+        $this->apiDocGenerator->generate($path, $controllerAction);
     }
 }

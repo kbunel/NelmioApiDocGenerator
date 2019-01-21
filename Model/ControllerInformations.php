@@ -1,6 +1,6 @@
 <?php
 
-namespace NelmioApiDocGenerator\Services;
+namespace NelmioApiDocGenerator\Model;
 
 class ControllerInformations
 {

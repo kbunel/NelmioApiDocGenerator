@@ -2,16 +2,16 @@
 
 namespace NelmioApiDocGenerator\Services;
 
-use App\Command\Services\FileAnalyzer;
-use App\Command\Services\FileAnalyzed;
-use App\Command\Services\ControllerInformations;
-use App\Command\Services\Tools;
 use Doctrine\Common\Annotations\AnnotationReader;
-use App\Command\Services\Logger;
+use Symfony\Component\Filesystem\Filesystem;
+use FileAnalyzer\Services\FileAnalyzer;
+use FileAnalyzer\Services\Logger;
+use FileAnalyzer\Services\Tools;
+use FileAnalyzer\Model\FileAnalyzed;
+use NelmioApiDocGenerator\Model\ControllerInformations;
 
 class NelmioApiDocGenerator
 {
-    private const CONTROLLER_PATH       = __DIR__ . '/../../../src';
     private const SWAG_TPL              = __DIR__.'/../Resources/views/swag.tpl.php';
 
     private const SWG_SERVICE           = 'Swagger\Annotations as SWG';
@@ -32,9 +32,9 @@ class NelmioApiDocGenerator
         $this->tools = $tools;
     }
 
-    public function generate(string $controllerAction = null): void
+    public function generate(string $path, ?string $controllerAction): void
     {
-        $controllersFiles = array_filter($this->fileAnalyzer->analyze(self::CONTROLLER_PATH), function($file) use ($controllerAction) {
+        $controllersFiles = array_filter($this->fileAnalyzer->analyze($path), function($file) use ($controllerAction) {
             if ($controllerAction) {
                 $controller = explode('::', $controllerAction)[0];
 
@@ -140,7 +140,7 @@ class NelmioApiDocGenerator
             }
         }
 
-        $this->filesystem->dumpFile($filePath, $content);
+        $this->filesystem->dumpFile($fileName, implode($lines));
     }
 
     private function isASingleRoute(\ReflectionMethod $method): bool
