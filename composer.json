@@ -1,6 +1,6 @@
 {
     "name": "kbunel/nelmio-api-doc-generator",
-	"type": "symfony-bundle",
+  	"type": "symfony-bundle",
     "description": "This bundle is curretly in development",
     "keywords": [ "Nelmio Api Doc", "generator", "sf4", "Symfony", "Symfony 4" ],
     "license": "MIT",
