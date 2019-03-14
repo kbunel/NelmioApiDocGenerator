@@ -6,6 +6,7 @@ use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use NelmioApiDocGenerator\Services\NelmioApiDocGenerator;
 
 class NelmioApiDocGeneratorCommand extends ContainerAwareCommand
@@ -26,18 +27,20 @@ class NelmioApiDocGeneratorCommand extends ContainerAwareCommand
         $this
             ->setName(self::$defaultName)
             ->setDescription('Generate doc on routes')
-            ->addArgument('path', InputArgument::REQUIRED)
-            ->addArgument('controllerAction', InputArgument::OPTIONAL)
+            ->addArgument('path', InputArgument::OPTIONAL)
+            ->addOption('route', null, InputOption::VALUE_OPTIONAL, 'Generate a route specifying Controller::Action')
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $path = $input->getArgument('path');
+        $path = $input->getArgument('path') ?? 'src';
 
-        $controllerAction = $input->getArgument('controllerAction');
-        if (!preg_match('/^[a-zA-Z0-9]+::[a-zA-Z0-9]$/', $controllerAction)) {
-            $output->writeln('<comment>Wrong argument, controller path must be `controller::action`, eg: `SecurityController::login`</comment>');
+        $controllerAction = $input->getOption('route');
+        if ($controllerAction && !preg_match('/^[a-zA-Z0-9\\\\]+::[a-zA-Z0-9]+$/', $controllerAction)) {
+            $output->writeln('<comment>Wrong route, The route must be formated `namespace::action`, eg: `App\Controller\SecurityController::login`</comment>');
+
+            return;
         }
 
         $this->apiDocGenerator->generate($path, $controllerAction);

@@ -19,13 +19,27 @@ class NelmioApiDocGenerator
 
     private $skipped = [];
 
+    private $fdataReturnedCollector;
+    private $fHttpResponses;
     private $fileAnalyzer;
-    private $tools;
-    private $logger;
     private $filesystem;
+    private $fGroups;
+    private $logger;
+    private $tools;
 
-    public function __construct(FileAnalyzer $fileAnalyzer, Tools $tools, Logger $logger, Filesystem $filesystem)
+    public function __construct(
+        FileAnalyzer $fileAnalyzer,
+        Tools $tools,
+        Logger $logger,
+        Filesystem $filesystem,
+        array $fGroups = [],
+        array $fHttpResponses = [],
+        array $fdataReturnedCollector = [])
     {
+        $this->fdataReturnedCollector = implode('|', $fdataReturnedCollector);
+        $this->fHttpResponses = implode('|', $fHttpResponses);
+        $this->fGroups = implode('|', $fGroups);
+
         $this->fileAnalyzer = $fileAnalyzer;
         $this->filesystem = $filesystem;
         $this->logger = $logger;
@@ -34,12 +48,11 @@ class NelmioApiDocGenerator
 
     public function generate(string $path, ?string $controllerAction): void
     {
-        $controllersFiles = array_filter($this->fileAnalyzer->analyze($path), function($file) use ($controllerAction) {
-            if ($controllerAction) {
-                $controller = explode('::', $controllerAction)[0];
-
+        $namespace = $controllerAction ? str_replace('\\', '\\\\', explode('::', $controllerAction)[0]) : null;
+        $controllersFiles = array_filter($this->fileAnalyzer->analyze($path), function($file) use ($namespace) {
+            if ($namespace) {
                 return $file->kind == FileAnalyzer::FILE_KIND_CONTROLLER
-                    && preg_match('/\\\\' . $controller . '$/', $file->originNamespace);
+                    && preg_match('/' . $namespace . '$/', $file->originNamespace);
             }
 
             return $file->kind == FileAnalyzer::FILE_KIND_CONTROLLER;
@@ -134,10 +147,13 @@ class NelmioApiDocGenerator
         array_splice($lines, $offset, 0, $swgTemplateLines);
 
         $services = $this->fileAnalyzer->getServices($fileName);
-        foreach ([self::NELMIO_MODEL_SERVICE, self::SWG_SERVICE] as $apiDocService) {
-            if (!in_array($apiDocService, $services)) {
-                $lines = $this->addServiceInLines($lines, $apiDocService);
-            }
+
+        if ($controllerInformations->model && !in_array(self::NELMIO_MODEL_SERVICE, $services)) {
+            $lines = $this->addServiceInLines($lines, self::NELMIO_MODEL_SERVICE);
+        }
+
+        if (!in_array(self::SWG_SERVICE, $services)) {
+            $lines = $this->addServiceInLines($lines, self::SWG_SERVICE);
         }
 
         $this->filesystem->dumpFile($fileName, implode($lines));
@@ -263,13 +279,13 @@ class NelmioApiDocGenerator
                 }
             }
 
-            if (preg_match('/(getSerializedView|setSerializationContext)/', $line)) {
+            if (preg_match('/(' . $this->fGroups . '|setSerializationContext)/', $line)) {
                 if (preg_match('/\[[\', a-zA-Z0-9\-]+\]/', $line, $match)) {
                     $ci->groups = str_replace('\'', '"', str_replace(['[', ']'], '', $match[0]));
                 }
             }
 
-            if (preg_match('/(^return |getSerializedView|\$this->view)/', $line) and preg_match('/[0-9]+/', $line, $match)) {
+            if (preg_match('/(^return |' . $this->fHttpResponses . '|\$this->view)/', $line) and preg_match('/[0-9]+/', $line, $match)) {
                 $httpResponseCode = intval($match[0]);
                 if ($httpResponseCode >= 200 && $httpResponseCode < 300) {
                     $ci->httpResponseCode = $httpResponseCode;
@@ -286,11 +302,13 @@ class NelmioApiDocGenerator
 
     private function getModelFromVariableReturned(array $lines, \ReflectionMethod $method): ?string
     {
-        foreach ($lines as $line) {
-            if (preg_match('/getSerializedView/', $line)) {
-                $varName = explode(', ', preg_replace('/\).+$/', '', explode('(', $line)[1]))[0];
+        if ($this->fdataReturnedCollector) {
+            foreach ($lines as $line) {
+                if (preg_match('/(' . $this->fdataReturnedCollector . ')/', $line)) {
+                    $varName = explode(', ', preg_replace('/\).+$/', '', explode('(', $line)[1]))[0];
 
-                break;
+                    break;
+                }
             }
         }
 

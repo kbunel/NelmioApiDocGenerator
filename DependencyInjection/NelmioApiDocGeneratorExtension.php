@@ -13,5 +13,23 @@ class NelmioApiDocGeneratorExtension extends Extension
     {
 		$loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.yaml');
+
+        $configuration = new Configuration();
+        $config = $this->processConfiguration($configuration, $configs);
+
+        if (!isset($config['functions'])) {
+            return;
+        }
+
+        $nelmioApiDocGeneratorDefinition = $container->getDefinition('NelmioApiDocGenerator\Services\NelmioApiDocGenerator');
+        if (isset($config['functions']['serialization_groups'])) {
+            $nelmioApiDocGeneratorDefinition->setArgument('$fGroups', $config['functions']['serialization_groups']);
+        }
+        if (isset($config['functions']['http_responses'])) {
+            $nelmioApiDocGeneratorDefinition->setArgument('$fHttpResponses', $config['functions']['http_responses']);
+        }
+        if (isset($config['functions']['return'])) {
+            $nelmioApiDocGeneratorDefinition->setArgument('$fdataReturnedCollector', $config['functions']['return']);
+        }
     }
 }

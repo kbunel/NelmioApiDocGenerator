@@ -11,7 +11,7 @@ Applications that use Symfony Flex
 Open a command console, enter your project directory and execute:
 
 ```console
-$ composer require kbunel/nelmio-api-doc-generator --dev
+$ composer require kbunel/nelmio-api-doc-generator --dev --update-with-dependencies
 ```
 
 Applications that don't use Symfony Flex
@@ -23,7 +23,7 @@ Open a command console, enter your project directory and execute the
 following command to download the latest stable version of this bundle:
 
 ```console
-$ composer require kbunel/nelmio-api-doc-generator --dev
+$ composer require kbunel/nelmio-api-doc-generator --dev --update-with-dependencies
 ```
 
 This command requires you to have Composer installed globally, as explained
@@ -44,10 +44,11 @@ class AppKernel extends Kernel
 {
     public function registerBundles()
     {
-        $bundles = array(
+        if (in_array($this->getEnvironment(), array('dev', 'test'))) {
             // ...
-            new NelmioApiDocGenerator\NelmioApiDocGeneratorBundle();
-        );
+            $bundles[] = new NelmioApiDocGenerator\NelmioApiDocGeneratorBundle();
+            $bundles[] = new FileAnalyzer\FileAnalyzerBundle();
+        }
 
         // ...
     }
@@ -59,8 +60,23 @@ class AppKernel extends Kernel
 NelmioApiDocGeneratorBundle configuration
 ============
 
-```yaml
+The generator will parse files and try to get informations.
+If you use custom functions in the controtller's action to serialize your datas and have specific groups,
+function that handle http responses or a return function with data's variable inside.
 
+serialization_groups: Function that handle the serialization's group
+http_responses: function that handle the http response
+return: function that handle the datas returned
+
+```yaml
+nelmio_api_doc_generator:
+    functions:
+        serialization_groups:
+            - customFunction
+        http_responses:
+            - customFunction
+        return:
+            - customFunction
 ```
 
 Command
@@ -69,54 +85,17 @@ Command
 To generate the tests, run:
 
 ```console
-$ php bin/console kbunel:behat:generate-test
+$ php bin/console kbunel:nelmioApiDoc:generate
 ```
 
 Available options
 ----------------------------------
 
-##### Add a tag:
+##### Generate documentation for a specific route:
+
+namespace: The controller Namespace.
+action: The function name for the route in the controller.
 
 ```console
-$ php bin/console kbunel:behat:generate-test tag=new
-```
-
-##### Generate tests from a specific controller with his namespace:
-
-```console
-$ php bin/console kbunel:behat:generate-test namespace='App\Controller\MyController'
-```
-
-##### Generate tests for specifics method (separated by a comma):
-
-```console
-$ php bin/console kbunel:behat:generate-test methods='put,patch'
-```
-
-##### Generate tests from a specific namespace:
-
-This option will get all routes from controllers whose namespace begin by the specified one
-
-```console
-$ php bin/console kbunel:behat:generate-test fromNamespace='App\Controller\Users'
-```
-
-Available configuration
-----------------------------------
-```yaml
-behat_test_generator:
-    fixtures:
-        folder: 'path/to/the/fixtures/folder'
-    features:
-        commonFixtures: 'NameOfTheCommonFileFixtures.yaml' # Path to the file used to add the common fixture with the fixtures generated
-        authenticationEmails:
-            ^admin: 'super_admin@test.com' # ['route_regex' => 'email_used']
-            ^user: 'user@test.com'
-            # ...
-        httpResponses: # http responses used with test expectations
-            get: 200
-            put: 204
-            patch: 204
-            post: 201
-            delete: 204
+$ php bin/console kbunel:nelmioApiDoc:generate route=namespace::action
 ```
