@@ -1,4 +1,4 @@
-This bundle is in development and is currently not operational
+This project is not maintained anymore 
 
 Add a command to generate nelmio api doc
 
