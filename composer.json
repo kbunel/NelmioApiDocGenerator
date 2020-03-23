@@ -1,7 +1,7 @@
 {
     "name": "kbunel/nelmio-api-doc-generator",
-  	"type": "symfony-bundle",
-    "description": "This bundle is curretly in development",
+    "type": "symfony-bundle",
+    "description": "This bundle generates Nelmio Api Doc annotations above all routes in the application.",
     "keywords": [ "Nelmio Api Doc", "generator", "sf4", "Symfony", "Symfony 4" ],
     "license": "MIT",
     "authors": [
